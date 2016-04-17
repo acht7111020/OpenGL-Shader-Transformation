@@ -1,0 +1,32 @@
+﻿已經開始建置於 2016/4/17 上午 04:30:58。
+     1>節點 2 (Build 目標) 上的專案 "C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\CG_HW2\CG_HW2.vcxproj"。
+     1>ClCompile:
+         E:\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /I"C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\CG_HW2\\..\..\include" /Zi /nologo /W3 /WX- /O2 /Oi /Oy- /GL /D WIN32 /D NDEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /EHsc /MD /GS /Gy /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Release\\" /Fd"Release\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
+         main.cpp
+     1>main.cpp(124): warning C4101: 'maxVal' : 未參考的區域變數
+     1>main.cpp(125): warning C4101: 'minVal' : 未參考的區域變數
+     1>main.cpp(185): warning C4101: 'vx' : 未參考的區域變數
+     1>main.cpp(199): warning C4101: 'c3' : 未參考的區域變數
+     1>main.cpp(185): warning C4101: 'vz' : 未參考的區域變數
+     1>main.cpp(185): warning C4101: 'vy' : 未參考的區域變數
+     1>main.cpp(199): warning C4101: 'c1' : 未參考的區域變數
+     1>main.cpp(199): warning C4101: 'c2' : 未參考的區域變數
+     1>main.cpp(246): warning C4018: '<' : signed/unsigned 不相符
+     1>main.cpp(597): warning C4244: '=' : 將 'double' 轉換為 'GLfloat'，由於類型不同，可能導致資料遺失
+     1>main.cpp(598): warning C4244: '=' : 將 'double' 轉換為 'GLfloat'，由於類型不同，可能導致資料遺失
+     1>main.cpp(606): warning C4244: '=' : 將 'double' 轉換為 'GLfloat'，由於類型不同，可能導致資料遺失
+     1>main.cpp(607): warning C4244: '=' : 將 'double' 轉換為 'GLfloat'，由於類型不同，可能導致資料遺失
+     1>main.cpp(805): warning C4018: '<' : signed/unsigned 不相符
+       Link:
+         E:\Microsoft Visual Studio 12.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\Release\CG_HW2.exe" /INCREMENTAL:NO /NOLOGO /LIBPATH:"C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\CG_HW2\\..\..\lib" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\Release\CG_HW2.pdb" /SUBSYSTEM:CONSOLE /OPT:REF /OPT:ICF /LTCG /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\Release\CG_HW2.lib" /MACHINE:X86 /SAFESEH Release\glm.obj
+         Release\main.obj
+         Release\Matrices.obj
+         Release\textfile.obj
+         正在產生程式碼
+         已完成程式碼產生
+         CG_HW2.vcxproj -> C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\Release\CG_HW2.exe
+     1>專案 "C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\CG_HW2\CG_HW2.vcxproj" (Build 目標) 建置完成。
+
+建置成功。
+
+經過時間 00:00:00.91

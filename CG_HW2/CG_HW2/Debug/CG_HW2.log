@@ -1,0 +1,11 @@
+﻿已經開始建置於 2016/4/13 下午 09:19:29。
+     1>節點 2 (Build 目標) 上的專案 "C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\CG_HW2\CG_HW2.vcxproj"。
+     1>ClCompile:
+         E:\Microsoft Visual Studio 12.0\VC\bin\CL.exe /c /ZI /nologo /W3 /WX- /Od /Oy- /D WIN32 /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm /EHsc /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Fo"Debug\\" /Fd"Debug\vc120.pdb" /Gd /TP /analyze- /errorReport:prompt main.cpp
+         main.cpp
+     1>c:\users\blurry\downloads\計算機圖學\hw2\cg_hw2_framework\cg_hw2\cg_hw2\cg_hw2\main.cpp(4): fatal error C1083: 無法開啟包含檔案: 'GL/glew.h': No such file or directory
+     1>專案 "C:\Users\Blurry\Downloads\計算機圖學\HW2\CG_HW2_framework\CG_HW2\CG_HW2\CG_HW2\CG_HW2.vcxproj" (Build 目標) 建置完成 -- 失敗。
+
+建置失敗。
+
+經過時間 00:00:00.20
