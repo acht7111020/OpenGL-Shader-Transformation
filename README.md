@@ -17,9 +17,9 @@ Use open openGL shader pipeline to implement MVP matrix and projection.
 
 ### -----------You can also press number to change camera eyes position.-----------
 + Press 6 to increase x-axis camera eyes.
-+ printf("Press 4 to decrease x-axis camera eyes.
-+ printf("Press 8 to increase y-axis camera eyes.
-+ printf("Press 2 to decrease y-axis camera eyes.
++ Press 4 to decrease x-axis camera eyes.
++ Press 8 to increase y-axis camera eyes.
++ Press 2 to decrease y-axis camera eyes.
 			
 ### -----------Mouse Event Function.-----------
 + Press the left button and drag the objects to translate.
