@@ -66,6 +66,7 @@ char filename[] = "ColorModels/bunny5KC.obj";
 //GLMmodel* OBJ;
 GLfloat* vertices;
 GLfloat* colors;
+int mouse_mode = 0;
 int projFlag = 0;	// 1: ortho, 0: perspective
 int transMode = 1;	// 1: Scale, 2: Trans, 3: Rotate, 4: Eyes
 int selectModel = 0; // 0, 1, 2, 3
@@ -255,7 +256,7 @@ void loadOBJModel()
 		traverseColorModel(&Objects[i]);
 		initOBJMVP(&Objects[i]); 
 		//initTrans(&Objects[i]);
-		OBJModelTranslate(&Objects[i], xmove[i], ymove[i], 0.5f);
+		OBJModelTranslate(&Objects[i], xmove[i], ymove[i], 0.0f);
 		
 	}
 	
@@ -263,8 +264,8 @@ void loadOBJModel()
 
 void UpdateProjection(int flag){
 
-	GLfloat nearZ = 0.5;
-	GLfloat farZ = 5;
+	GLfloat nearZ = 4;
+	GLfloat farZ = 100;
 	Matrix4 P;
 
 	switch (flag) {
@@ -308,9 +309,9 @@ void cameraLookAt(){
 	Vector3 vecU_ = vecS.cross(vecF).normalize();
 
 	Matrix4 rotateV = Matrix4{
-		vecS.x, vecU_.x, -vecF.x, 0,
-		vecS.y, vecU_.y, -vecF.y, 0,
-		vecS.z, vecU_.z, -vecF.z, 0,
+		vecS.x, vecS.y, vecS.z, 0,
+		vecU_.x, vecU_.y, vecU_.z, 0,
+		-vecF.x, -vecF.y, -vecF.z, 0,
 		0, 0, 0, 1
 	};
 
@@ -320,7 +321,7 @@ void cameraLookAt(){
 		0, 0, 1, -camera.eye[2],
 		0, 0, 0, 1,
 	};
-	globalV = rotateV*transV;
+	globalV = (rotateV.transpose()*transV.transpose()).transpose();
 }
 void UpdateCamera(GLfloat x, GLfloat y){
 
@@ -392,11 +393,57 @@ void UpdateModeMevement(int mode, GLfloat x, GLfloat y, GLfloat z){
 				Objects[selectModel].M = m;
 			}
 			break;
-		case 4:	// Eyes
+		case 4: // scale camera
+			camera.eye[2] -= z;
+			cameraLookAt();
+			break;
+		case 5:	// Eyes camera
 			camera.eye[0] += x;
 			camera.eye[1] += y;
 			camera.eye[2] += z;
 			cameraLookAt();
+			break;
+		case 6:	// Rotate camera
+			if (x != 0){
+
+				m = Matrix4{
+				1, 0, 0, 0,
+				0, cos(x), -sin(x), 0,
+				0, sin(x), cos(x), 0,
+				0, 0, 0, 1,
+			};
+				m = m*globalV;
+				m[3] = globalV[3];
+				m[7] = globalV[7];
+				m[11] = globalV[11];
+				globalV = m;
+			}
+			if (y != 0){
+				m = Matrix4{
+				cos(y), 0, sin(y), 0,
+				0, 1, 0, 0,
+				-sin(y), 0, cos(y), 0,
+				0, 0, 0, 1,
+			};
+				m = m*globalV;
+				m[3] = globalV[3];
+				m[7] = globalV[7];
+				m[11] = globalV[11];
+				globalV = m;
+			}
+			if (z != 0) {
+				m = Matrix4{
+				cos(z), -sin(z), 0, 0,
+				sin(z), cos(z), 0, 0,
+				0, 0, 1, 0,
+				0, 0, 0, 1,
+			};
+				m = m*globalV;
+				m[3] = globalV[3];
+				m[7] = globalV[7];
+				m[11] = globalV[11];
+				globalV = m;
+			}
 			break;
 		default:
 			break;
@@ -406,11 +453,11 @@ void UpdateModeMevement(int mode, GLfloat x, GLfloat y, GLfloat z){
 void initCameraAndPlane(){
 	camera.eye[0] = 0;
 	camera.eye[1] = 0;
-	camera.eye[2] = 1.5;
+	camera.eye[2] = 4.5;
 
 	camera.center[0] = 0;
 	camera.center[1] = 0;
-	camera.center[2] = -5;
+	camera.center[2] = 0;
 
 	camera.up[0] = 0;
 	camera.up[1] = 1;
@@ -559,10 +606,10 @@ void onMouse(int who, int state, int x, int y)
 			mouseRight.flag = 1;
 			break; 
 		case GLUT_WHEEL_UP:      
-			UpdateModeMevement(1, 0.02f, 0.02f, 0.02f);
+			UpdateModeMevement(1 + mouse_mode, 0.02f, 0.02f, 0.02f);
 			break;
 		case GLUT_WHEEL_DOWN:    
-			UpdateModeMevement(1, -0.02f, -0.02f, -0.02f);
+			UpdateModeMevement(1 + mouse_mode, -0.02f, -0.02f, -0.02f);
 			break;
 		default:                 break;
 	}
@@ -597,7 +644,7 @@ void onMouseMotion(int x, int y)
 		mouseLeft.end[0] = (double)x / 300;
 		mouseLeft.end[1] = (double)y / 300;
 		if (mouseLeft.start[0] != 0 || mouseLeft.start[1] != 0){
-			UpdateModeMevement(2, (mouseLeft.end[0] - mouseLeft.start[0]), -(mouseLeft.end[1] - mouseLeft.start[1]), 0);
+			UpdateModeMevement(2 + mouse_mode, (mouseLeft.end[0] - mouseLeft.start[0]), -(mouseLeft.end[1] - mouseLeft.start[1]), 0);
 		}
 		mouseLeft.start[0] = mouseLeft.end[0];
 		mouseLeft.start[1] = mouseLeft.end[1];
@@ -606,7 +653,7 @@ void onMouseMotion(int x, int y)
 		mouseRight.end[0] = (double)x / 300;
 		mouseRight.end[1] = (double)y / 300;
 		if (mouseRight.start[0] != 0 || mouseRight.start[1] != 0){
-			UpdateModeMevement(3, (mouseRight.end[1] - mouseRight.start[1]), (mouseRight.end[0] - mouseRight.start[0]), 0);
+			UpdateModeMevement(3 + mouse_mode, (mouseRight.end[1] - mouseRight.start[1]), (mouseRight.end[0] - mouseRight.start[0]), 0);
 		}
 		mouseRight.start[0] = mouseRight.end[0];
 		mouseRight.start[1] = mouseRight.end[1];
@@ -641,6 +688,7 @@ void onKeyboard(unsigned char key, int x, int y)
 			printf("Press 8 to increase y-axis camera eyes.\n");
 			printf("Press 2 to decrease y-axis camera eyes.\n\n");
 			printf("-----------Mouse Event Function.-----------\n");
+			printf("Press z/Z to change model operate/ camera operate.\n");
 			printf("Press the left button and drag the objects to translate.\n");
 			printf("Press the right button and drag the objects to rotate.\n");
 			printf("Roll the middle button and drag the objects to scale.\n\n");
@@ -675,7 +723,7 @@ void onKeyboard(unsigned char key, int x, int y)
 			break;
 		case 'e':	// e: eye coordinates input (ex, ey, ez)
 		case 'E':
-			transMode = 4;
+			transMode = 5;
 			break;
 		/*
 			Movement
@@ -704,24 +752,30 @@ void onKeyboard(unsigned char key, int x, int y)
 		case 'M':
 			UpdateModeMevement(transMode, 0, 0, -0.02f);
 			break;
+		case 'z':
+		case 'Z':
+			mouse_mode = (mouse_mode == 0) ? 3 : 0;
+			if(mouse_mode == 0) printf("mouse mode : model operate\n");
+			else printf("mouse mode : camera operate\n");
+			break;
 		/*
 			Camera eye move.
 		*/
 		case'4':
 			printf("x = %d\n", x);
-			UpdateCamera(0.05f, 0);
+			UpdateCamera(-0.05f, 0);
 			break;
 		case'6':
 			printf("x = %d\n", x);
-			UpdateCamera(-0.05f, 0);
+			UpdateCamera(0.05f, 0);
 			break;
 		case'8':
 			printf("y = %d\n", y);
-			UpdateCamera(0, -0.05f);
+			UpdateCamera(0, 0.05f);
 			break;
 		case'2':
 			printf("y = %d\n", y);
-			UpdateCamera(0, 0.05f);
+			UpdateCamera(0, -0.05f);
 			break;
 		case'5':
 			Reset();
