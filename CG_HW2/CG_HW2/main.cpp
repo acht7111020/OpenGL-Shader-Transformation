@@ -30,6 +30,8 @@ GLfloat PlaneMaxX = 1;
 GLfloat PlaneMinX = -1;
 GLfloat PlaneMaxY = 1;
 GLfloat PlaneMinY = -1;
+GLfloat cameraX = 0;
+GLfloat cameraY = 0;
 using namespace std;
 class DisplayModel {
 public:
@@ -37,10 +39,14 @@ public:
 	GLMmodel* model;
 	vector<GLfloat> vertexBuffer;
 	vector<GLfloat> colorBuffer;
+	GLfloat scaleParas;
 
 	//Transformation matrix
+	Matrix4 initial_matrix;
+	Vector3 trans_vector;
+	Vector3 scale_vector;
+	Vector3 rotate_vector;
 	Matrix4 M;
-	Matrix4 MVP; // only MVP is column major
 };
 
 struct CameraParameters {
@@ -69,202 +75,13 @@ GLfloat* colors;
 int mouse_mode = 0;
 int projFlag = 0;	// 1: ortho, 0: perspective
 int transMode = 1;	// 1: Scale, 2: Trans, 3: Rotate, 4: Eyes
-int selectModel = 0; // 0, 1, 2, 3
+int selectModel = 0; // 0, 1, 2, 3 
 
-void calMinandMax(GLfloat *trans, GLfloat x, GLfloat y, GLfloat z){
-	if (x > trans[0]) trans[0] = x;
-	if (x < trans[1]) trans[1] = x;
-	if (y > trans[2]) trans[2] = y;
-	if (y < trans[3]) trans[3] = y;
-	if (z > trans[4]) trans[4] = z;
-	if (z < trans[5]) trans[5] = z;
 
-}
-GLfloat modelingScale(GLfloat *trans, DisplayModel* OBJ, GLfloat size){
-	GLfloat diffX = (trans[0] - trans[1]);
-	GLfloat diffY = (trans[2] - trans[3]);
-	GLfloat diffZ = (trans[4] - trans[5]);
-	GLfloat tmp = max(diffX, diffY);
-	tmp = max(diffZ, tmp);
-	if (tmp == diffX){
-		// X max;
-		if (trans[0] > trans[1] * -1) {
-			glmScale(OBJ->model, size / trans[0]);
-			return (size / trans[0]);
-		}
-		else {
-			glmScale(OBJ->model, -1 * size / trans[1]);
-			return (-size / trans[1]);
-		}
-	}
-	else if (tmp == diffY){
-		if (trans[2] > trans[3] * -1) { 
-			glmScale(OBJ->model, size / trans[2]); 
-			return (size / trans[2]);
-		}
-		else { 
-			glmScale(OBJ->model, -1 * size / trans[3]); 
-			return (-size / trans[3]);
-		}
-	}
-	else {
-		if (trans[4] > trans[5] * -1) { 
-			glmScale(OBJ->model, size / trans[4]); 
-			return (size / trans[4]);
-		}
-		else { 
-			glmScale(OBJ->model, -1 * size / trans[5]); 
-			return (-size / trans[5]);
-		}
-	}
-}
-void traverseColorModel(DisplayModel* OBJ)
-{
-	int i;
-
-	GLfloat maxVal[3];
-	GLfloat minVal[3];
-	GLfloat trans[6] = { -10, 10, -10, 10, -10, 10 };
-
-	// number of triangles
-	OBJ->model->numtriangles;
-
-	// number of vertices
-	OBJ->model->numvertices;
-
-	// find the center 
-	GLfloat mid_x, mid_y, mid_z;
-	mid_x = mid_y = mid_z = 0;
-	for (int i = 0; i<(int)OBJ->model->numtriangles; i++)
-	{
-		int indv1 = OBJ->model->triangles[i].vindices[0];
-		int indv2 = OBJ->model->triangles[i].vindices[1];
-		int indv3 = OBJ->model->triangles[i].vindices[2];
-
-		mid_x += OBJ->model->vertices[3 * indv1 + 0];
-		mid_y += OBJ->model->vertices[3 * indv1 + 1];
-		mid_z += OBJ->model->vertices[3 * indv1 + 2];
-		calMinandMax(&trans[0], OBJ->model->vertices[indv1 * 3 + 0], OBJ->model->vertices[indv1 * 3 + 1], OBJ->model->vertices[indv1 * 3+ 2]);
-
-		mid_x += OBJ->model->vertices[3 * indv2 + 0];
-		mid_y += OBJ->model->vertices[3 * indv2 + 1];
-		mid_z += OBJ->model->vertices[3 * indv2 + 2];
-		calMinandMax(&trans[0], OBJ->model->vertices[indv2 * 3 + 0], OBJ->model->vertices[indv2 * 3 + 1], OBJ->model->vertices[indv2* 3 + 2]);
-
-		mid_x += OBJ->model->vertices[3 * indv3 + 0];
-		mid_y += OBJ->model->vertices[3 * indv3 + 1];
-		mid_z += OBJ->model->vertices[3 * indv3 + 2];
-		calMinandMax(&trans[0], OBJ->model->vertices[indv3 * 3 + 0], OBJ->model->vertices[indv3 * 3 + 1], OBJ->model->vertices[indv3 * 3 + 2]);
-	}
-	mid_x /= OBJ->model->numtriangles*3;
-	mid_y /= OBJ->model->numtriangles*3;
-	mid_z /= OBJ->model->numtriangles*3;
-	printf("mide = %f %f %f\n", mid_x, mid_y, mid_z);
-	// set the center position of the model
-	OBJ->model->position[0] = (trans[0] + trans[1]) / 2;
-	OBJ->model->position[1] = (trans[2] + trans[3]) / 2;
-	OBJ->model->position[2] = (trans[4] + trans[5]) / 2;
-	printf("position = %f %f %f\n\n", OBJ->model->position[0], OBJ->model->position[1], OBJ->model->position[2]);
-	GLfloat scaleParas = modelingScale(trans, OBJ, 0.3f);
-	OBJ->model->position[0] *= scaleParas;
-	OBJ->model->position[1] *= scaleParas;
-	OBJ->model->position[2] *= scaleParas;
-
-	for(i=0; i<(int)OBJ->model->numtriangles; i++)
-	{
-		// the index of each vertex
-		int indv1 = OBJ->model->triangles[i].vindices[0];
-		int indv2 = OBJ->model->triangles[i].vindices[1];
-		int indv3 = OBJ->model->triangles[i].vindices[2];
-
-		// the index of each color
-		int indc1 = indv1;
-		int indc2 = indv2;
-		int indc3 = indv3;
-
-		// vertices
-		GLfloat vx, vy, vz;
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv1 * 3 + 0] - OBJ->model->position[0]);
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv1 * 3 + 1] - OBJ->model->position[1]);
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv1 * 3 + 2] - OBJ->model->position[2]);
-
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv2 * 3 + 0] - OBJ->model->position[0]);
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv2 * 3 + 1] - OBJ->model->position[1]);
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv2 * 3 + 2] - OBJ->model->position[2]);
-
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv3 * 3 + 0] - OBJ->model->position[0]);
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv3 * 3 + 1] - OBJ->model->position[1]);
-		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv3 * 3 + 2] - OBJ->model->position[2]);
-
-		// colors
-		GLfloat c1, c2, c3;
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv1 * 3 + 0]);
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv1 * 3 + 1]);
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv1 * 3 + 2]);
-
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv2 * 3 + 0]);
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv2 * 3 + 1]);
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv2 * 3 + 2]);
-
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv3 * 3 + 0]);
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv3 * 3 + 1]);
-		OBJ->colorBuffer.push_back(OBJ->model->colors[indv3 * 3 + 2]);
-	}
-	
-}
-void OBJModelTranslate(DisplayModel *OBJ, GLfloat x, GLfloat y, GLfloat z){
-
-	OBJ->M[3] += x;
-	OBJ->M[7] += y;
-	OBJ->M[11] += z;
-
-	//update MVP first
-	OBJ->MVP = globalP*globalV*OBJ->M;
-}
-void initOBJMVP(DisplayModel *OBJ){
-	Matrix4 M = Matrix4(
-		1, 0, 0, 0,			
-		0, 1, 0, 0,			
-		0, 0, 1, 0,		
-		0, 0, 0, 1);
-
-	Matrix4 MVP = globalP*globalV*M;
-	
-	OBJ->M = M;
-	OBJ->MVP = MVP;
-}
-void initTrans(DisplayModel *OBJ){
-	OBJ->M[3] = -OBJ->model->position[0];
-	OBJ->M[7] = -OBJ->model->position[1];
-	OBJ->M[11] = -OBJ->model->position[2];
-}
-void loadOBJModel()
-{
-	string file[4] = {"blitzcrank_incognito.obj", "brain18KC.obj", "bunny5KC.obj", "duck4KC.obj"};
-	GLfloat xmove[4] = { 0.5f, 0.0f, -0.5f, 0.0f };
-	GLfloat ymove[4] = { 0.0f, 0.5f, 0.0f, -0.5f };
-	if (Objects.size() != 0){
-		for (int i = 0; i < Objects.size(); i++)
-			free(Objects[i].model);
-	}
-	Objects.resize(4);
-	for (int i = 0; i < 4 ; i++){
-		Objects[i].filename = "ColorModels/" + file[i];
-		Objects[i].model = glmReadOBJ( &Objects[i].filename[0]);
-		printf("load file : %s\n", &Objects[i].filename[0]);
-		// traverse the color model
-		traverseColorModel(&Objects[i]);
-		initOBJMVP(&Objects[i]); 
-		//initTrans(&Objects[i]);
-		OBJModelTranslate(&Objects[i], xmove[i], ymove[i], 0.0f);
-		
-	}
-	
-}
 
 void UpdateProjection(int flag){
 
-	GLfloat nearZ = 4;
+	GLfloat nearZ = 3.5;
 	GLfloat farZ = 100;
 	Matrix4 P;
 
@@ -298,12 +115,52 @@ void UpdateProjection(int flag){
 
 	globalP = P;
 }
+Matrix4 Rotate(GLfloat a, GLfloat b, GLfloat c){
+	Matrix4 temp1 = Matrix4(
+		1, 0, 0, 0,
+		0, cos(a), -sin(a), 0,
+		0, sin(a), cos(a), 0,
+		0, 0, 0, 1
+		);
+	Matrix4 temp2 = Matrix4(
+		cos(b), 0, sin(b), 0,
+		0, 1, 0, 0,
+		-sin(b), 0, cos(b), 0,
+		0, 0, 0, 1
+		);
+	Matrix4 temp3 = Matrix4(
+		cos(c), -sin(c), 0, 0,
+		sin(c), cos(c), 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1
+		);
+	return temp3*temp2*temp1;
+}
+Matrix4 Scale(GLfloat a, GLfloat b, GLfloat c){
+	Matrix4 temp1 = Matrix4{
+		a, 0, 0, 0,
+		0, b, 0, 0,
+		0, 0, c, 0,
+		0, 0, 0, 1,
+	};
+	
+	return temp1;
+}
+Matrix4 Translate(GLfloat a, GLfloat b, GLfloat c){
+	Matrix4 temp1 = Matrix4{
+		1, 0, 0, a,
+		0, 1, 0, b,
+		0, 0, 1, c,
+		0, 0, 0, 1,
+	};
 
+	return temp1;
+}
 void cameraLookAt(){
 
 	Vector3 corP = Vector3(camera.eye[0], camera.eye[1], camera.eye[2]);
-	Vector3 corE = Vector3(camera.center[0], camera.center[1], camera.center[2]);
-	Vector3 vecU = Vector3(camera.up[0], camera.up[1], camera.up[2]);
+	Vector3 corE = Rotate(cameraX, cameraY, 0)*Vector3(camera.center[0], camera.center[1], camera.center[2]);
+	Vector3 vecU = Rotate(cameraX, cameraY, 0)*Vector3(camera.up[0], camera.up[1], camera.up[2]);
 	Vector3 vecF = Vector3(corE - corP).normalize();
 	Vector3 vecS = vecF.cross(vecU).normalize();
 	Vector3 vecU_ = vecS.cross(vecF).normalize();
@@ -330,68 +187,24 @@ void UpdateCamera(GLfloat x, GLfloat y){
 	cameraLookAt();
 
 }
+
 void UpdateModeMevement(int mode, GLfloat x, GLfloat y, GLfloat z){
 	Matrix4 m;
 	switch (mode){			// 1: Scale, 2: Trans, 3: Rotate, 4: Eyes
 		case 1:	// Scale
-			m = Matrix4{
-					1+x, 0, 0, 0,
-					0, 1+y, 0, 0,
-					0, 0, 1+z, 0,
-					0, 0, 0, 1,
-			};
-			m = m*Objects[selectModel].M;
-			m[3] = Objects[selectModel].M[3];
-			m[7] = Objects[selectModel].M[7];
-			m[11] = Objects[selectModel].M[11];
-			Objects[selectModel].M = m; 
+			Objects[selectModel].scale_vector.x += x;
+			Objects[selectModel].scale_vector.y += y;
+			Objects[selectModel].scale_vector.z += z;
 			break;
 		case 2:	// Trans
-			Objects[selectModel].M[3] += x;
-			Objects[selectModel].M[7] += y;
-			Objects[selectModel].M[11] += z;
+			Objects[selectModel].trans_vector.x += x;
+			Objects[selectModel].trans_vector.y += y;
+			Objects[selectModel].trans_vector.z += z;
 			break;
 		case 3:	// Rotate
-			if (x != 0){
-				
-				m = Matrix4{
-					1, 0, 0, 0,
-					0, cos(x), -sin(x), 0,
-					0, sin(x), cos(x), 0,
-					0, 0, 0, 1,
-				};
-				m = m*Objects[selectModel].M;
-				m[3] = Objects[selectModel].M[3];
-				m[7] = Objects[selectModel].M[7];
-				m[11] = Objects[selectModel].M[11];
-				Objects[selectModel].M = m;
-			}
-			if (y != 0){
-				m = Matrix4{
-				cos(y), 0, sin(y), 0,
-				0, 1, 0, 0,
-				-sin(y), 0, cos(y), 0,
-				0, 0, 0, 1,
-				};
-				m = m*Objects[selectModel].M;
-				m[3] = Objects[selectModel].M[3];
-				m[7] = Objects[selectModel].M[7];
-				m[11] = Objects[selectModel].M[11];
-				Objects[selectModel].M = m ;
-			}
-			if (z != 0) {
-				m = Matrix4{
-					cos(z), -sin(z), 0, 0,
-					sin(z), cos(z), 0, 0,
-					0, 0, 1, 0,
-					0, 0, 0, 1,
-				};
-				m = m*Objects[selectModel].M;
-				m[3] = Objects[selectModel].M[3];
-				m[7] = Objects[selectModel].M[7];
-				m[11] = Objects[selectModel].M[11];
-				Objects[selectModel].M = m;
-			}
+			Objects[selectModel].rotate_vector.x += x;
+			Objects[selectModel].rotate_vector.y += y;
+			Objects[selectModel].rotate_vector.z += z;
 			break;
 		case 4: // scale camera
 			camera.eye[2] -= z;
@@ -404,46 +217,9 @@ void UpdateModeMevement(int mode, GLfloat x, GLfloat y, GLfloat z){
 			cameraLookAt();
 			break;
 		case 6:	// Rotate camera
-			if (x != 0){
-
-				m = Matrix4{
-				1, 0, 0, 0,
-				0, cos(x), -sin(x), 0,
-				0, sin(x), cos(x), 0,
-				0, 0, 0, 1,
-			};
-				m = m*globalV;
-				m[3] = globalV[3];
-				m[7] = globalV[7];
-				m[11] = globalV[11];
-				globalV = m;
-			}
-			if (y != 0){
-				m = Matrix4{
-				cos(y), 0, sin(y), 0,
-				0, 1, 0, 0,
-				-sin(y), 0, cos(y), 0,
-				0, 0, 0, 1,
-			};
-				m = m*globalV;
-				m[3] = globalV[3];
-				m[7] = globalV[7];
-				m[11] = globalV[11];
-				globalV = m;
-			}
-			if (z != 0) {
-				m = Matrix4{
-				cos(z), -sin(z), 0, 0,
-				sin(z), cos(z), 0, 0,
-				0, 0, 1, 0,
-				0, 0, 0, 1,
-			};
-				m = m*globalV;
-				m[3] = globalV[3];
-				m[7] = globalV[7];
-				m[11] = globalV[11];
-				globalV = m;
-			}
+			cameraX -= x;
+			cameraY -= y;
+			cameraLookAt();
 			break;
 		default:
 			break;
@@ -462,16 +238,21 @@ void initCameraAndPlane(){
 	camera.up[0] = 0;
 	camera.up[1] = 1;
 	camera.up[2] = 0;
+	cameraX = 0;
+	cameraY = 0;
+
+	for (int i = 0; i < 4; i++){
+		Objects[i].scale_vector = Vector3(1,1,1);
+		Objects[i].trans_vector = Vector3(0, 0, 0);
+		Objects[i].rotate_vector = Vector3(0, 0, 0);
+	}
 
 	cameraLookAt();
 	UpdateProjection(0);
+	
 
 }
-void Reset(){
 
-	initCameraAndPlane();
-	loadOBJModel();
-}
 void onIdle()
 {
 	glutPostRedisplay();
@@ -479,23 +260,24 @@ void onIdle()
 
 void drawObjects(DisplayModel *OBJ){
 
-	//MVP
-	Matrix4 T;
-	Matrix4 S;
-	Matrix4 R;
-
-	OBJ->MVP = globalP*globalV*OBJ->M;
+	Matrix4 T = Translate(OBJ->trans_vector.x, OBJ->trans_vector.y, OBJ->trans_vector.z);
+	Matrix4 S = Scale(OBJ->scale_vector.x, OBJ->scale_vector.y, OBJ->scale_vector.z);
+	Matrix4 R = Rotate(OBJ->rotate_vector.x, OBJ->rotate_vector.y, OBJ->rotate_vector.z);
+	Matrix4 Model = OBJ->M*T*S*R*OBJ->initial_matrix;
+	Matrix4 MVP = globalP*globalV*Model;
 
 	GLfloat mvp[16];
 	// row-major ---> column-major
-	mvp[0] = OBJ->MVP[0];  mvp[4] = OBJ->MVP[1];   mvp[8] = OBJ->MVP[2];    mvp[12] = OBJ->MVP[3];
-	mvp[1] = OBJ->MVP[4];  mvp[5] = OBJ->MVP[5];   mvp[9] = OBJ->MVP[6];    mvp[13] = OBJ->MVP[7];
-	mvp[2] = OBJ->MVP[8];  mvp[6] = OBJ->MVP[9];   mvp[10] = OBJ->MVP[10];   mvp[14] = OBJ->MVP[11];
-	mvp[3] = OBJ->MVP[12]; mvp[7] = OBJ->MVP[13];  mvp[11] = OBJ->MVP[14];   mvp[15] = OBJ->MVP[15];
+	mvp[0] = MVP[0];  mvp[4] = MVP[1];   mvp[8] = MVP[2];    mvp[12] = MVP[3];
+	mvp[1] = MVP[4];  mvp[5] = MVP[5];   mvp[9] = MVP[6];    mvp[13] = MVP[7];
+	mvp[2] = MVP[8];  mvp[6] = MVP[9];   mvp[10] = MVP[10];   mvp[14] = MVP[11];
+	mvp[3] = MVP[12]; mvp[7] = MVP[13];  mvp[11] = MVP[14];   mvp[15] = MVP[15];
 
 	// bind array pointers to shader
 	glVertexAttribPointer(iLocPosition, 3, GL_FLOAT, GL_FALSE, 0, &OBJ->vertexBuffer[0]);
 	glVertexAttribPointer(iLocColor, 3, GL_FLOAT, GL_FALSE, 0, &OBJ->colorBuffer[0]);
+	/*glVertexAttribPointer(iLocPosition, 3, GL_FLOAT, GL_FALSE, 0, OBJ->model->vertices);
+	glVertexAttribPointer(iLocColor, 3, GL_FLOAT, GL_FALSE, 0, OBJ->model->colors);*/
 
 	// bind uniform matrix to shader
 	glUniformMatrix4fv(iLocMVP, 1, GL_FALSE, mvp);
@@ -523,7 +305,176 @@ void onDisplay(void)
 
 	glutSwapBuffers();
 }
+void calMinandMax(GLfloat *trans, GLfloat x, GLfloat y, GLfloat z){
+	if (x > trans[0]) trans[0] = x;
+	if (x < trans[1]) trans[1] = x;
+	if (y > trans[2]) trans[2] = y;
+	if (y < trans[3]) trans[3] = y;
+	if (z > trans[4]) trans[4] = z;
+	if (z < trans[5]) trans[5] = z;
 
+}
+GLfloat modelingScale(GLfloat *trans, DisplayModel* OBJ, GLfloat size){
+	GLfloat diffX = (trans[0] - trans[1]);
+	GLfloat diffY = (trans[2] - trans[3]);
+	GLfloat diffZ = (trans[4] - trans[5]);
+	GLfloat tmp = max(diffX, diffY);
+	tmp = max(diffZ, tmp);
+	GLfloat scaler;
+	
+	if (tmp == diffX){
+		// X max
+		if (trans[0] > trans[1] * -1) 
+			scaler = size / trans[0];
+		else 
+			scaler = -size / trans[1];
+	}
+	else if (tmp == diffY){
+		if (trans[2] > trans[3] * -1) 
+			scaler = size / trans[2];
+		else 
+			scaler = -size / trans[3];
+	}
+	else {
+		if (trans[4] > trans[5] * -1) 
+			scaler = size / trans[4];
+		else 
+			scaler = -size / trans[5];
+	}
+	//glmScale(OBJ->model, scaler);
+	return scaler ;
+}
+void traverseColorModel(DisplayModel* OBJ)
+{
+	int i;
+
+	GLfloat maxVal[3];
+	GLfloat minVal[3];
+	GLfloat trans[6] = { -10, 10, -10, 10, -10, 10 };
+
+	// number of triangles
+	OBJ->model->numtriangles;
+
+	// number of vertices
+	OBJ->model->numvertices;
+
+	for (int i = 0; i < (int)OBJ->model->numtriangles; i++)
+	{
+		int indv1 = OBJ->model->triangles[i].vindices[0];
+		int indv2 = OBJ->model->triangles[i].vindices[1];
+		int indv3 = OBJ->model->triangles[i].vindices[2];
+
+		calMinandMax(&trans[0], OBJ->model->vertices[indv1 * 3 + 0], OBJ->model->vertices[indv1 * 3 + 1], OBJ->model->vertices[indv1 * 3 + 2]);
+		calMinandMax(&trans[0], OBJ->model->vertices[indv2 * 3 + 0], OBJ->model->vertices[indv2 * 3 + 1], OBJ->model->vertices[indv2 * 3 + 2]);
+		calMinandMax(&trans[0], OBJ->model->vertices[indv3 * 3 + 0], OBJ->model->vertices[indv3 * 3 + 1], OBJ->model->vertices[indv3 * 3 + 2]);
+	}
+	
+	OBJ->model->position[0] = (trans[0] + trans[1]) / 2;
+	OBJ->model->position[1] = (trans[2] + trans[3]) / 2;
+	OBJ->model->position[2] = (trans[4] + trans[5]) / 2;
+	OBJ->scaleParas = modelingScale(trans, OBJ, 0.3f);
+	OBJ->model->position[0] *= OBJ->scaleParas;
+	OBJ->model->position[1] *= OBJ->scaleParas;
+	OBJ->model->position[2] *= OBJ->scaleParas;
+
+	for (i = 0; i < (int)OBJ->model->numtriangles; i++)
+	{
+		// the index of each vertex
+		int indv1 = OBJ->model->triangles[i].vindices[0];
+		int indv2 = OBJ->model->triangles[i].vindices[1];
+		int indv3 = OBJ->model->triangles[i].vindices[2];
+
+		// the index of each color
+		int indc1 = indv1;
+		int indc2 = indv2;
+		int indc3 = indv3;
+
+		// vertices
+		GLfloat vx, vy, vz;
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv1 * 3 + 0]);
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv1 * 3 + 1]);
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv1 * 3 + 2]);
+
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv2 * 3 + 0]);
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv2 * 3 + 1]);
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv2 * 3 + 2]);
+
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv3 * 3 + 0]);
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv3 * 3 + 1]);
+		OBJ->vertexBuffer.push_back(OBJ->model->vertices[indv3 * 3 + 2]);
+
+		// colors
+		GLfloat c1, c2, c3;
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv1 * 3 + 0]);
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv1 * 3 + 1]);
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv1 * 3 + 2]);
+
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv2 * 3 + 0]);
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv2 * 3 + 1]);
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv2 * 3 + 2]);
+
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv3 * 3 + 0]);
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv3 * 3 + 1]);
+		OBJ->colorBuffer.push_back(OBJ->model->colors[indv3 * 3 + 2]);
+	}
+
+}
+void OBJModelTranslate(DisplayModel *OBJ, GLfloat x, GLfloat y, GLfloat z){
+
+	OBJ->M[3] += x;
+	OBJ->M[7] += y;
+	OBJ->M[11] += z;
+
+}
+void initOBJMVP(DisplayModel *OBJ){
+	Matrix4 scale = Matrix4(
+		OBJ->scaleParas, 0, 0, 0,
+		0, OBJ->scaleParas, 0, 0,
+		0, 0, OBJ->scaleParas, 0,
+		0, 0, 0, 1);
+	Matrix4 trans = Matrix4(
+		1, 0, 0, -OBJ->model->position[0],
+		0, 1, 0, -OBJ->model->position[1],
+		0, 0, 1, -OBJ->model->position[2],
+		0, 0, 0, 1);
+	OBJ->initial_matrix = trans*scale;
+
+	OBJ->M = Matrix4(
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1);
+
+	
+}
+void loadOBJModel()
+{
+	string file[4] = { "blitzcrank_incognito.obj", "brain18KC.obj", "bunny5KC.obj", "duck4KC.obj" };
+	GLfloat xmove[4] = { 0.5f, 0.0f, -0.5f, 0.0f };
+	GLfloat ymove[4] = { 0.0f, 0.5f, 0.0f, -0.5f };
+	if (Objects.size() != 0){
+		for (int i = 0; i < Objects.size(); i++)
+			free(Objects[i].model);
+	}
+	Objects.resize(4);
+	for (int i = 0; i < 4; i++){
+		Objects[i].filename = "ColorModels/" + file[i];
+		Objects[i].model = glmReadOBJ(&Objects[i].filename[0]);
+		printf("load file : %s\n", &Objects[i].filename[0]);
+		// traverse the color model
+		traverseColorModel(&Objects[i]);
+		initOBJMVP(&Objects[i]);
+		OBJModelTranslate(&Objects[i], xmove[i], ymove[i], 0.0f);
+
+	}
+
+}
+
+void Reset(){
+
+	initCameraAndPlane();
+	loadOBJModel();
+}
 void showShaderCompileStatus(GLuint shader, GLint *shaderCompiled)
 {
 	glGetShaderiv(shader, GL_COMPILE_STATUS, shaderCompiled);
@@ -762,19 +713,19 @@ void onKeyboard(unsigned char key, int x, int y)
 			Camera eye move.
 		*/
 		case'4':
-			printf("x = %d\n", x);
+			//printf("x = %d\n", x);
 			UpdateCamera(-0.05f, 0);
 			break;
 		case'6':
-			printf("x = %d\n", x);
+			//printf("x = %d\n", x);
 			UpdateCamera(0.05f, 0);
 			break;
 		case'8':
-			printf("y = %d\n", y);
+			//printf("y = %d\n", y);
 			UpdateCamera(0, 0.05f);
 			break;
 		case'2':
-			printf("y = %d\n", y);
+			//printf("y = %d\n", y);
 			UpdateCamera(0, -0.05f);
 			break;
 		case'5':
